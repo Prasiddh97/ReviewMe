@@ -1,20 +1,23 @@
 # analyze_reviews.py
 from review_fetcher import fetch_reviews
-from summarizer   import summarize
+from summarizer import summarize
 
-def analyze(query: str) -> dict:
+def analyze(query_params: dict):
     """
-    Very naive mapping: you should replace with
-    real entity resolution (Google Places search, etc.).
-    For demo we accept: 'yelp:<bizid>' or HTML URL.
+    Analyzes reviews based on a source (Yelp/Google), store name, and location.
     """
-    if query.startswith("yelp:"):
-        reviews = fetch_reviews("yelp", biz_id=query.split(":",1)[1])
-    elif query.startswith("http"):
-        reviews = fetch_reviews("scrape", url=query, selector=".review, .text")
-    else:
-        return {"error": "Unrecognized query"}
+    source = query_params.get("source")
+    store_name = query_params.get("store_name")
+    location = query_params.get("location")
+
+    if not all([source, store_name, location]):
+        return {"error": "Missing source, store name, or location."}
+
+    # Fetch reviews from the selected source
+    reviews = fetch_reviews(source, store_name=store_name, location=location)
+
     if not reviews:
-        return {"error": "No reviews found"}
+        return {"error": f"No {source.title()} reviews found for '{store_name.title()}' in '{location.title()}'."}
+
     summary = summarize(reviews)
     return {"summary": summary, "samples": reviews[:5]}
